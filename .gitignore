@@ -1,0 +1,7 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/__vm/.halvoeAudioBoardSerialInterface.vsarduino.h
+/.vs
+/__vm/Compile.vmps.xml
