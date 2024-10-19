@@ -50,8 +50,10 @@ namespace halvoe
           {}
       };
 
-    private:
+    protected:
       HardwareSerial& m_serial;
+
+    private:
       std::array<uint8_t, tc_serializerBufferSize> m_serializerBuffer;
       std::array<uint8_t, tc_deserializerBufferSize> m_deserializerBuffer;
 
