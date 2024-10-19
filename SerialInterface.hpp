@@ -40,8 +40,12 @@ namespace halvoe
 
       struct OutMessage
       {
+        friend SerialInterface<tc_serializerBufferSize, tc_deserializerBufferSize>;
+
         public:
           Serializer<tc_serializerBufferSize> m_serializer;
+        
+        private:
           SerializerReference<SerialMessageSizeType> m_messageSize;
 
         public:
@@ -63,13 +67,13 @@ namespace halvoe
 
       bool handleData(Deserializer<tc_deserializerBufferSize>&& in_deserializer)
       {
-        auto code = SerialDataCode{ in_deserializer.template read<std::underlying_type<SerialDataCode>::type>() };
+        auto code = in_deserializer.template readEnum<SerialDataCode>();
         return doHandleData(std::move(in_deserializer), code);
       }
 
       bool handleCommand(Deserializer<tc_deserializerBufferSize>&& in_deserializer)
       {
-        auto code = SerialCommandCode{ in_deserializer.template read<std::underlying_type<SerialCommandCode>::type>() };
+        auto code = in_deserializer.template readEnum<SerialCommandCode>();
         return doHandleCommand(std::move(in_deserializer), code);
       }
       
@@ -99,20 +103,23 @@ namespace halvoe
       bool receiveMessage()
       {
         if (m_serial.available() < sizeof(SerialMessageSizeType)) { return false; }
+        Serial.println("m_serial.available() < sizeof(SerialMessageSizeType)");
         
         Deserializer<tc_deserializerBufferSize> deserializer(m_deserializerBuffer);
         m_serial.readBytes(m_deserializerBuffer.data(), sizeof(SerialMessageSizeType));
         SerialMessageSizeType messageSize = deserializer.template read<SerialMessageSizeType>();
+        Serial.println(messageSize);
         size_t bytesReceived = m_serial.readBytes(m_deserializerBuffer.data() + deserializer.getBytesRead(),
                                                   messageSize - deserializer.getBytesRead());
         
         if (bytesReceived != messageSize) { return false; }
 
         auto interfaceTag = deserializer.template read<uint16_t>();
-        // ToDo: Check tag!
+        Serial.println(interfaceTag, HEX);// ToDo: Check tag!
         auto interfaceVersion = deserializer.template read<uint16_t>();
-        // ToDo: Check version!
+        Serial.println(interfaceVersion, HEX);// ToDo: Check version!
         auto serialMessageType = deserializer.template readEnum<SerialMessageType>();
+        Serial.println(static_cast<std::underlying_type<SerialMessageType>::type>(serialMessageType));
 
         switch (serialMessageType)
         {
