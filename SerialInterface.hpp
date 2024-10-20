@@ -50,7 +50,7 @@ namespace halvoe
           SerializerReference<SerialMessageSizeType> m_messageSize;
 
         public:
-          OutMessage(const Serializer<tc_serializerBufferSize>& in_serializer, const SerializerReference<SerialMessageSizeType>& in_messageSize) :
+          OutMessage(Serializer<tc_serializerBufferSize>& in_serializer, SerializerReference<SerialMessageSizeType>& in_messageSize) :
             m_serializer(in_serializer), m_messageSize(in_messageSize)
           {}
       };
@@ -61,19 +61,19 @@ namespace halvoe
       std::array<uint8_t, tc_deserializerBufferSize> m_deserializerBuffer;
 
     private:
-      virtual bool doHandleData(Deserializer<tc_deserializerBufferSize>&& in_deserializer, SerialDataCode in_code) = 0;
-      virtual bool doHandleCommand(Deserializer<tc_deserializerBufferSize>&& in_deserializer, SerialCommandCode in_code) = 0;
+      virtual bool doHandleData(Deserializer<tc_deserializerBufferSize>& io_deserializer, SerialDataCode in_code) = 0;
+      virtual bool doHandleCommand(Deserializer<tc_deserializerBufferSize>& io_deserializer, SerialCommandCode in_code) = 0;
 
-      bool handleData(Deserializer<tc_deserializerBufferSize>&& in_deserializer)
+      bool handleData(Deserializer<tc_deserializerBufferSize>& io_deserializer)
       {
-        auto code = in_deserializer.template readEnum<SerialDataCode>();
-        return doHandleData(std::move(in_deserializer), code);
+        auto code = io_deserializer.template readEnum<SerialDataCode>();
+        return doHandleData(io_deserializer, code);
       }
 
-      bool handleCommand(Deserializer<tc_deserializerBufferSize>&& in_deserializer)
+      bool handleCommand(Deserializer<tc_deserializerBufferSize>& io_deserializer)
       {
-        auto code = in_deserializer.template readEnum<SerialCommandCode>();
-        return doHandleCommand(std::move(in_deserializer), code);
+        auto code = io_deserializer.template readEnum<SerialCommandCode>();
+        return doHandleCommand(io_deserializer, code);
       }
       
     public:
@@ -95,7 +95,7 @@ namespace halvoe
         return OutMessage(serialzer, messageSize);
       }
       
-      size_t sendMessage(OutMessage& io_message)
+      bool sendMessage(OutMessage& io_message)
       {
         Serial.println("sendMessage()");
 
@@ -109,7 +109,7 @@ namespace halvoe
           Serial.println(static_cast<std::underlying_type<SerialMessageType>::type>(debugDeserializer.template readEnum<SerialMessageType>()));
         }
 
-        return m_serial.write(m_serializerBuffer.data(), io_message.m_serializer.getBytesWritten());
+        return m_serial.write(m_serializerBuffer.data(), io_message.m_serializer.getBytesWritten()) == io_message.m_serializer.getBytesWritten();
       }
 
       bool receiveMessage()
@@ -137,8 +137,8 @@ namespace halvoe
         switch (serialMessageType)
         {
           case SerialMessageType::invalid: return false;
-          case SerialMessageType::data: return handleData(std::move(deserializer));
-          case SerialMessageType::command: return handleCommand(std::move(deserializer));
+          case SerialMessageType::data: return handleData(deserializer);
+          case SerialMessageType::command: return handleCommand(deserializer);
         }
 
         return true;

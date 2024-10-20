@@ -25,18 +25,18 @@ class SerialImpl : public SerialInterface<c_serializerBufferSize, c_deserializer
 		}
 
 	private:
-		bool doHandleData(Deserializer<c_deserializerBufferSize>&& in_deserializer, SerialDataCode in_code)
+		bool doHandleData(Deserializer<c_deserializerBufferSize>& io_deserializer, SerialDataCode in_code)
 		{
 			return false;
 		}
 
-		bool doHandleCommand(Deserializer<c_deserializerBufferSize>&& in_deserializer, SerialCommandCode in_code)
+		bool doHandleCommand(Deserializer<c_deserializerBufferSize>& io_deserializer, SerialCommandCode in_code)
 		{
 			switch (in_code)
 			{
 				case SerialCommandCode::playFile:
 					SerialStringSizeType filenameSize = 0;
-					auto filenamePointer = in_deserializer.read<SerialStringSizeType>(64, filenameSize);
+					auto filenamePointer = io_deserializer.read<SerialStringSizeType>(64, filenameSize);
 					String filename(filenamePointer.get(), filenameSize);
 					return true;
 			}
