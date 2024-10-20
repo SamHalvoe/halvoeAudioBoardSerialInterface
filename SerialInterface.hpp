@@ -20,7 +20,8 @@ namespace halvoe
   enum class SerialCommandCode : uint16_t
   {
     invalid = 0,
-    playFile
+    playFile,
+    endPlayback
   };
 
   // This is the type, which holds the size in bytes of the strings, contained in the serial message.
