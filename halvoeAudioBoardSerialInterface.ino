@@ -61,5 +61,5 @@ void loop()
 	serialImpl.receiveMessage();
 	auto message = serialImpl.beginMessage(SerialMessageType::command);
 	message.m_serializer.write(string.c_str(), string.length());
-	serialImpl.sendMessage(std::move(message));
+	serialImpl.sendMessage(message);
 }

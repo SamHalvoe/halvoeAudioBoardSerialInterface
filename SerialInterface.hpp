@@ -49,15 +49,13 @@ namespace halvoe
           SerializerReference<SerialMessageSizeType> m_messageSize;
 
         public:
-          OutMessage(Serializer<tc_serializerBufferSize>&& in_serializer, SerializerReference<SerialMessageSizeType>&& in_messageSize) :
-            m_serializer(std::move(in_serializer)), m_messageSize(std::move(in_messageSize))
+          OutMessage(const Serializer<tc_serializerBufferSize>& in_serializer, const SerializerReference<SerialMessageSizeType>& in_messageSize) :
+            m_serializer(in_serializer), m_messageSize(in_messageSize)
           {}
       };
 
     protected:
       HardwareSerial& m_serial;
-
-    private:
       std::array<uint8_t, tc_serializerBufferSize> m_serializerBuffer;
       std::array<uint8_t, tc_deserializerBufferSize> m_deserializerBuffer;
 
@@ -86,18 +84,41 @@ namespace halvoe
 
       OutMessage beginMessage(SerialMessageType in_messageType)
       {
+        Serial.println("beginMessage()");
+
         Serializer<tc_serializerBufferSize> serialzer(m_serializerBuffer);
         auto messageSize = serialzer.template skip<SerialMessageSizeType>();
         serialzer.template write<uint16_t>(c_interfaceTag);
         serialzer.template write<uint16_t>(c_interfaceVersion);
         serialzer.template writeEnum<SerialMessageType>(in_messageType);
-        return OutMessage(std::move(serialzer), std::move(messageSize));
+
+        {
+          Deserializer<tc_serializerBufferSize> debugDeserializer(m_serializerBuffer);
+          debugDeserializer.template skip<SerialMessageSizeType>();
+          Serial.println(debugDeserializer.template read<uint16_t>(), HEX);
+          Serial.println(debugDeserializer.template read<uint16_t>(), HEX);
+          Serial.println(static_cast<std::underlying_type<SerialMessageType>::type>(debugDeserializer.template readEnum<SerialMessageType>()));
+        }
+
+        Serial.println(serialzer.getBytesWritten());
+        return OutMessage(serialzer, messageSize);
       }
       
-      size_t sendMessage(OutMessage&& in_message)
+      size_t sendMessage(OutMessage& io_message)
       {
-        in_message.m_messageSize.write(in_message.m_serializer.template getBytesWritten() - sizeof(SerialMessageSizeType));
-        return m_serial.write(m_serializerBuffer.data(), in_message.m_serializer.template getBytesWritten());
+        Serial.println("sendMessage()");
+
+        io_message.m_messageSize.write(io_message.m_serializer.getBytesWritten() - sizeof(SerialMessageSizeType)); // this <- should not be the problem
+
+        {
+          Deserializer<tc_serializerBufferSize> debugDeserializer(m_serializerBuffer);
+          Serial.println(debugDeserializer.template read<SerialMessageSizeType>());
+          Serial.println(debugDeserializer.template read<uint16_t>(), HEX);
+          Serial.println(debugDeserializer.template read<uint16_t>(), HEX);
+          Serial.println(static_cast<std::underlying_type<SerialMessageType>::type>(debugDeserializer.template readEnum<SerialMessageType>()));
+        }
+
+        return m_serial.write(m_serializerBuffer.data(), io_message.m_serializer.getBytesWritten());
       }
 
       bool receiveMessage()
@@ -106,11 +127,13 @@ namespace halvoe
         Serial.println("m_serial.available() < sizeof(SerialMessageSizeType)");
         
         Deserializer<tc_deserializerBufferSize> deserializer(m_deserializerBuffer);
+        // sizeof(SerialMessageSizeType) corresponds to the number of bytes used to store the message size in bytes
         m_serial.readBytes(m_deserializerBuffer.data(), sizeof(SerialMessageSizeType));
         SerialMessageSizeType messageSize = deserializer.template read<SerialMessageSizeType>();
         Serial.println(messageSize);
-        size_t bytesReceived = m_serial.readBytes(m_deserializerBuffer.data() + deserializer.getBytesRead(),
-                                                  messageSize - deserializer.getBytesRead());
+        Serial.println(deserializer.getBytesRead());
+        size_t bytesReceived = m_serial.readBytes(m_deserializerBuffer.data() + deserializer.getBytesRead(), messageSize);
+        Serial.println(bytesReceived);
         
         if (bytesReceived != messageSize) { return false; }
 
