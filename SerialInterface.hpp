@@ -91,16 +91,6 @@ namespace halvoe
         serialzer.template write<uint16_t>(c_interfaceTag);
         serialzer.template write<uint16_t>(c_interfaceVersion);
         serialzer.template writeEnum<SerialMessageType>(in_messageType);
-
-        {
-          Deserializer<tc_serializerBufferSize> debugDeserializer(m_serializerBuffer);
-          debugDeserializer.template skip<SerialMessageSizeType>();
-          Serial.println(debugDeserializer.template read<uint16_t>(), HEX);
-          Serial.println(debugDeserializer.template read<uint16_t>(), HEX);
-          Serial.println(static_cast<std::underlying_type<SerialMessageType>::type>(debugDeserializer.template readEnum<SerialMessageType>()));
-        }
-
-        Serial.println(serialzer.getBytesWritten());
         return OutMessage(serialzer, messageSize);
       }
       
@@ -131,7 +121,6 @@ namespace halvoe
         m_serial.readBytes(m_deserializerBuffer.data(), sizeof(SerialMessageSizeType));
         SerialMessageSizeType messageSize = deserializer.template read<SerialMessageSizeType>();
         Serial.println(messageSize);
-        Serial.println(deserializer.getBytesRead());
         size_t bytesReceived = m_serial.readBytes(m_deserializerBuffer.data() + deserializer.getBytesRead(), messageSize);
         Serial.println(bytesReceived);
         
