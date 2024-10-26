@@ -1,5 +1,3 @@
-// Visual Micro is in vMicro>General>Tutorial Mode
-// 
 /*
     Name:       halvoeAudioBoardSerialInterface.ino
     Created:	19.10.2024 10:11:46
