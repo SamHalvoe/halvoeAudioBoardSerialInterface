@@ -1,6 +1,7 @@
 #pragma once
 
 #include <BasicSerializer.hpp>
+#include <Arduino.h>
 
 namespace halvoe
 {
