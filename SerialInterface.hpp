@@ -2,6 +2,7 @@
 
 #include <BasicSerializer.hpp>
 #include <Arduino.h>
+#include "halvoeLog.hpp"
 
 namespace halvoe
 {
@@ -86,7 +87,7 @@ namespace halvoe
 
       OutMessage beginMessage(SerialMessageType in_messageType)
       {
-        Serial.println("beginMessage()");
+        LOG_TRACE("beginMessage()");
 
         Serializer<tc_serializerBufferSize> serialzer(m_serializerBuffer);
         auto messageSize = serialzer.template skip<SerialMessageSizeType>();
@@ -98,7 +99,7 @@ namespace halvoe
       
       bool sendMessage(OutMessage& io_message)
       {
-        Serial.println("sendMessage()");
+        LOG_TRACE("sendMessage()");
 
         io_message.m_messageSize.write(io_message.m_serializer.getBytesWritten() - sizeof(SerialMessageSizeType)); // this <- should not be the problem
 
@@ -116,7 +117,7 @@ namespace halvoe
       bool receiveMessage()
       {
         if (m_serial.available() < sizeof(SerialMessageSizeType)) { return false; }
-        Serial.println("m_serial.available() < sizeof(SerialMessageSizeType)");
+        LOG_DEBUG("m_serial.available() < sizeof(SerialMessageSizeType)");
         
         Deserializer<tc_deserializerBufferSize> deserializer(m_deserializerBuffer);
         // sizeof(SerialMessageSizeType) corresponds to the number of bytes used to store the message size in bytes

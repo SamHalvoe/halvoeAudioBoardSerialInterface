@@ -24,5 +24,8 @@
     <ClInclude Include="SerialInterface.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="halvoeLog.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
