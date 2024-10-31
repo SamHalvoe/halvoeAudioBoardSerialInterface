@@ -88,7 +88,6 @@ namespace halvoe
       OutMessage beginMessage(SerialMessageType in_messageType)
       {
         LOG_TRACE("beginMessage()");
-
         Serializer<tc_serializerBufferSize> serialzer(m_serializerBuffer);
         auto messageSize = serialzer.template skip<SerialMessageSizeType>();
         serialzer.template write<uint16_t>(c_interfaceTag);
@@ -100,41 +99,31 @@ namespace halvoe
       bool sendMessage(OutMessage& io_message)
       {
         LOG_TRACE("sendMessage()");
-
         io_message.m_messageSize.write(io_message.m_serializer.getBytesWritten() - sizeof(SerialMessageSizeType)); // this <- should not be the problem
-
-        {
-          Deserializer<tc_serializerBufferSize> debugDeserializer(m_serializerBuffer);
-          Serial.println(debugDeserializer.template read<SerialMessageSizeType>());
-          Serial.println(debugDeserializer.template read<uint16_t>(), HEX);
-          Serial.println(debugDeserializer.template read<uint16_t>(), HEX);
-          Serial.println(static_cast<std::underlying_type<SerialMessageType>::type>(debugDeserializer.template readEnum<SerialMessageType>()));
-        }
-
         return m_serial.write(m_serializerBuffer.data(), io_message.m_serializer.getBytesWritten()) == io_message.m_serializer.getBytesWritten();
       }
 
       bool receiveMessage()
       {
         if (m_serial.available() < sizeof(SerialMessageSizeType)) { return false; }
-        LOG_DEBUG("m_serial.available() < sizeof(SerialMessageSizeType)");
+        LOG_TRACE("m_serial.available() < sizeof(SerialMessageSizeType)");
         
         Deserializer<tc_deserializerBufferSize> deserializer(m_deserializerBuffer);
         // sizeof(SerialMessageSizeType) corresponds to the number of bytes used to store the message size in bytes
         m_serial.readBytes(m_deserializerBuffer.data(), sizeof(SerialMessageSizeType));
         SerialMessageSizeType messageSize = deserializer.template read<SerialMessageSizeType>();
-        Serial.println(messageSize);
+        LOG_DEBUG(messageSize);
         size_t bytesReceived = m_serial.readBytes(m_deserializerBuffer.data() + deserializer.getBytesRead(), messageSize);
-        Serial.println(bytesReceived);
+        LOG_DEBUG(bytesReceived);
         
         if (bytesReceived != messageSize) { return false; }
 
         auto interfaceTag = deserializer.template read<uint16_t>();
-        Serial.println(interfaceTag, HEX);// ToDo: Check tag!
+        LOG_DEBUG(interfaceTag, HEX);// ToDo: Check tag!
         auto interfaceVersion = deserializer.template read<uint16_t>();
-        Serial.println(interfaceVersion, HEX);// ToDo: Check version!
+        LOG_DEBUG(interfaceVersion, HEX);// ToDo: Check version!
         auto serialMessageType = deserializer.template readEnum<SerialMessageType>();
-        Serial.println(static_cast<std::underlying_type<SerialMessageType>::type>(serialMessageType));
+        LOG_DEBUG(static_cast<std::underlying_type<SerialMessageType>::type>(serialMessageType));
 
         switch (serialMessageType)
         {
